@@ -1,25 +1,17 @@
-"""Parquet tap class."""
+# """Parquet tap class."""
 
 from typing import List
 
-import pyarrow.parquet as pq
-
 from singer_sdk import Tap, Stream
 from singer_sdk.typing import (
-    ArrayType,
-    BooleanType,
     DateTimeType,
-    IntegerType,
-    NumberType,
-    ObjectType,
     PropertiesList,
     Property,
     StringType,
-    JSONTypeHelper,
+    NumberType
 )
 
 from tap_parquet.streams import ParquetStream
-
 
 class TapParquet(Tap):
     """Parquet tap class."""
@@ -29,6 +21,8 @@ class TapParquet(Tap):
     config_jsonschema = PropertiesList(
         Property("start_date", DateTimeType),
         Property("filepath", StringType, required=True),
+        Property("batchsize", NumberType, required=False, default=1000), 
+        Property("nWorkers", NumberType, required=False, default=40), 
     ).to_dict()
 
     def discover_streams(self) -> List[Stream]:
@@ -37,11 +31,11 @@ class TapParquet(Tap):
             ParquetStream(
                 tap=self,
                 name=filename,
+                batchsize=self.config["batchsize"],
+                nWorkers = self.config["nWorkers"]
             )
             for filename in [self.config["filepath"]]
         ]
 
-
-# CLI Execution:
 
 cli = TapParquet.cli
