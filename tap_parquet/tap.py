@@ -21,8 +21,8 @@ class TapParquet(Tap):
     config_jsonschema = PropertiesList(
         Property("start_date", DateTimeType),
         Property("filepath", StringType, required=True),
-        Property("batchsize", NumberType, required=False, default=1000), 
-        Property("nWorkers", NumberType, required=False, default=40), 
+        Property("batch_size", NumberType, required=False, default=1000), 
+        Property("n_workers", NumberType, required=False, default=40), 
     ).to_dict()
 
     def discover_streams(self) -> List[Stream]:
@@ -31,8 +31,8 @@ class TapParquet(Tap):
             ParquetStream(
                 tap=self,
                 name=filename,
-                batchsize=self.config["batchsize"],
-                nWorkers = self.config["nWorkers"]
+                batch_size=self.config["batch_size"],
+                n_workers = self.config["n_workers"]
             )
             for filename in [self.config["filepath"]]
         ]

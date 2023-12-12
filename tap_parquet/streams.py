@@ -44,10 +44,10 @@ def get_jsonschema_type(ansi_type: str) -> JSONTypeHelper:
 
 
 class ParquetStream(Stream): 
-    def __init__(self, batchsize = None, nWorkers = None, *args, **kwargs):
+    def __init__(self, batch_size = None, n_workers = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.batchsize = batchsize if batchsize else 1000
-        self.nWorkers = nWorkers if nWorkers else 40
+        self.batch_size = batch_size if batch_size else 1000
+        self.n_workers = n_workers if n_workers else 40
 
     @property
     def filepath(self) -> str:
@@ -83,11 +83,11 @@ class ParquetStream(Stream):
             record_counter = metrics.record_counter(self.name)
 
             # Process the DataFrame in chunks
-            for i in parquet_file.iter_batches(batch_size=self.batchsize):
+            for i in parquet_file.iter_batches(batch_size=self.batch_size):
                 chunk = i.to_pandas()
 
                 # execute with workers, multithreaded
-                with ThreadPoolExecutor(max_workers=self.nWorkers) as executor:
+                with ThreadPoolExecutor(max_workers=self.n_workers) as executor:
                     result_list = list(executor.map(row_to_dict, chunk.itertuples(index=False)))
 
                 # covnvert to pd df and then to string 
@@ -96,7 +96,7 @@ class ParquetStream(Stream):
 
                 # write the string to sysout
                 print(concatenated_string)
-                record_counter.increment(self.batchsize)
+                record_counter.increment(self.batch_size)
 
         except Exception as ex:
             raise IOError(f"Could not read from Parquet file '{self.filepath}': {ex}")
