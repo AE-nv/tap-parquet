@@ -7,6 +7,7 @@ from typing import Optional, List, Iterable
 import simplejson as json
 import pandas as pd
 from singer_sdk import metrics
+import math
 
 from singer_sdk.helpers._util import utc_now
 
@@ -68,15 +69,37 @@ class ParquetStream(Stream):
         return PropertiesList(*properties).to_dict()
     
     def get_records(self) -> Iterable[dict]:
+        schema = self.schema
+
+        def cast_to_schema(row):
+            casted_record = {}
+            for key, value in row.items():
+                # Apply the appropriate data type conversion based on the schema
+                if key in schema['properties']:
+                    property_info = schema['properties'][key]
+                    if 'integer' in property_info['type']:
+                        casted_record[key] = int(value) if (value is not None and pd.isna(value) and not math.isnan(value)) else None
+                    elif 'number' in property_info['type']:
+                        casted_record[key] = float(value) if (value is not None and pd.isna(value) and not math.isnan(value)) else None
+                    elif 'string' in property_info['type']:
+                        casted_record[key] = str(value) if (value is not None and pd.isna(value) and not math.isnan(value)) else None
+                    else:
+                        casted_record[key] = value
+                else:
+                    # If no schema information is found for the key, treat it as a string
+                    casted_record[key] = value
+            return casted_record
+
+
         def row_to_dict(row): # helper function, converts the row to messages
             record_message = {
                 "type": "RECORD",
                 "stream": self.config["filepath"],
-                "record": self.stream_maps[0].transform(row._asdict()),
+                "record": cast_to_schema(row._asdict()),
                 "version" : None,
                 "time_extracted" :utc_now()
             }
-            return json.dumps(record_message, use_decimal=True, default=str)
+            return json.dumps(record_message, default=str, ignore_nan=True) 
         
         try:
             parquet_file = pq.ParquetFile(self.filepath)
