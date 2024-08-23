@@ -1,19 +1,14 @@
 """Stream class for tap-parquet."""
-
-import requests
-
-from copy import deepcopy
+from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, Optional, Union, List, Iterable
+from typing import Optional, List, Iterable
 
 from singer_sdk.streams import Stream
 from singer_sdk.typing import (
-    ArrayType,
     BooleanType,
     DateTimeType,
     IntegerType,
     NumberType,
-    ObjectType,
     PropertiesList,
     Property,
     StringType,
@@ -50,7 +45,7 @@ class ParquetStream(Stream):
         """Return the filepath for the parquet stream."""
         return self.config["filepath"]
 
-    @property
+    @cached_property
     def schema(self) -> dict:
         """Dynamically detect the json schema for the stream.
 
@@ -69,11 +64,5 @@ class ParquetStream(Stream):
             parquet_file = pq.ParquetFile(self.filepath)
         except Exception as ex:
             raise IOError(f"Could not read from parquet file '{self.filepath}': {ex}")
-        for i in range(parquet_file.num_row_groups):
-            table = parquet_file.read_row_group(i)
-            for batch in table.to_batches():
-                for row in zip(*batch.columns):
-                    yield {
-                        table.column_names[i]: val.as_py()
-                        for i, val in enumerate(row, start=0)
-                    }
+        for batch in parquet_file.iter_batches():
+            yield from batch.to_pylist()
