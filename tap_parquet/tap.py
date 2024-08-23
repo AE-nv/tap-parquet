@@ -2,20 +2,12 @@
 
 from typing import List
 
-import pyarrow.parquet as pq
-
 from singer_sdk import Tap, Stream
 from singer_sdk.typing import (
-    ArrayType,
-    BooleanType,
     DateTimeType,
-    IntegerType,
-    NumberType,
-    ObjectType,
     PropertiesList,
     Property,
-    StringType,
-    JSONTypeHelper,
+    StringType
 )
 
 from tap_parquet.streams import ParquetStream

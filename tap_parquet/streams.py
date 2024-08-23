@@ -1,19 +1,13 @@
 """Stream class for tap-parquet."""
-
-import requests
-
-from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Optional, Union, List, Iterable
+from typing import Optional, List, Iterable
 
 from singer_sdk.streams import Stream
 from singer_sdk.typing import (
-    ArrayType,
     BooleanType,
     DateTimeType,
     IntegerType,
     NumberType,
-    ObjectType,
     PropertiesList,
     Property,
     StringType,
